@@ -1,0 +1,53 @@
+{
+  "name": "byok-observability-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Grafana, Prometheus, Kafka UI, and Datadog — bring your own credentials (BYOK)",
+  "type": "module",
+  "bin": {
+    "byok-observability-mcp": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    ".env.example"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm run typecheck"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alimuratkuslu/byok-observability-mcp"
+  },
+  "homepage": "https://github.com/alimuratkuslu/byok-observability-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/alimuratkuslu/byok-observability-mcp/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "observability",
+    "grafana",
+    "prometheus",
+    "kafka",
+    "datadog",
+    "claude",
+    "byok"
+  ],
+  "license": "MIT"
+}

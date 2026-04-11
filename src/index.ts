@@ -1,0 +1,22 @@
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { createServer, closeServer } from "./server.js";
+
+async function main(): Promise<void> {
+  const server = await createServer();
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  process.stderr.write("[observability-mcp] Server started (stdio transport)\n");
+
+  // Graceful shutdown
+  const shutdown = async () => {
+    await closeServer();
+    process.exit(0);
+  };
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
+}
+
+main().catch((err) => {
+  process.stderr.write(`[observability-mcp] Fatal error: ${String(err)}\n`);
+  process.exit(1);
+});
