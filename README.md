@@ -1,37 +1,55 @@
-# byok-observability-mcp
+<div align="center">
+
+# 🔭 byok-observability-mcp
+
+**Query your observability stack from Claude Code — no data leaves your machine.**
 
 [![npm version](https://img.shields.io/npm/v/byok-observability-mcp)](https://www.npmjs.com/package/byok-observability-mcp)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Node ≥18](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
 
-A single MCP server that lets Claude Code query your observability stack — **Grafana**, **Prometheus**, **Kafka UI**, and **Datadog** — directly from your IDE.
+📊 Grafana &nbsp;·&nbsp; 🔥 Prometheus &nbsp;·&nbsp; 📨 Kafka UI &nbsp;·&nbsp; 🐕 Datadog
 
-**Bring Your Own Keys:** your credentials stay in environment variables on your machine. No data is sent to Anthropic. No cloning or building required — runs on demand via `npx`.
+</div>
 
-**Partial setup supported:** configure only the backends you use. Tools for unconfigured backends are never listed.
+---
+
+**Bring Your Own Keys** — credentials stay in env vars on your machine. No clone, no build, runs via `npx`.
+
+**Partial setup** — configure only the backends you use. Tools for unconfigured backends are never exposed.
+
+<p align="center">
+  <a href="#-quick-start">Quick Start</a> · 
+  <a href="#-tools">Tools</a> · 
+  <a href="#-getting-credentials">Credentials</a> · 
+  <a href="#%EF%B8%8F-configuration">Configuration</a> · 
+  <a href="#-example-prompts">Examples</a> · 
+  <a href="#-security">Security</a> · 
+  <a href="#-development">Development</a>
+</p>
 
 ---
 
 ## How it works
 
 ```
-Claude Code  ──►  byok-observability-mcp  (local npx process)
+Claude Code  ──►  byok-observability-mcp (local npx process)
                           │
                           │  env vars — never leave your machine
                           ▼
-          ┌───────────────────────────────┐
-          │  Grafana  │  Prometheus       │
-          │  Kafka UI │  Datadog (proxy)  │
-          └───────────────────────────────┘
+          ┌────────────────────────────────┐
+          │  📊 Grafana    🔥 Prometheus   │
+          │  📨 Kafka UI   🐕 Datadog      │
+          └────────────────────────────────┘
 ```
 
 ---
 
-## Quick Start
+## ⚡ Quick Start
 
-### Step 1 — Create `.mcp.json` in your project root
+### 1 → Create `.mcp.json` in your project root
 
-Include only the backends you want. Delete the lines you don't need.
+Include **only** the backends you need. Delete the rest.
 
 ```json
 {
@@ -52,9 +70,9 @@ Include only the backends you want. Delete the lines you don't need.
 }
 ```
 
-> **Credentials in git?** Use the `${VAR}` approach instead — see [Keep credentials out of git](#keep-credentials-out-of-git).
+> **Credentials in git?** Use the `${VAR}` approach instead — see [Configuration → Method B](#method-b--keep-credentials-out-of-git).
 
-### Step 2 — Start Claude Code
+### 2 → Start Claude Code
 
 ```bash
 claude
@@ -62,7 +80,7 @@ claude
 
 Claude Code reads `.mcp.json` automatically. No `claude mcp add`, no build step.
 
-### Step 3 — Verify
+### 3 → Verify
 
 Ask Claude:
 
@@ -70,13 +88,69 @@ Ask Claude:
 What observability tools do you have available?
 ```
 
-Expected: Claude lists all tools for your configured backends.
+> [!TIP]
+> **That's it.** No clone, no build, no install. Works in under 60 seconds.
 
 ---
 
-## Tools
+## Using with OpenAI Codex CLI
 
-### Grafana
+Works the same way — the MCP server uses stdio transport, which Codex CLI supports natively. No code changes needed.
+
+### 1 → Create `codex.yaml` in your project root
+
+```bash
+curl -sO https://raw.githubusercontent.com/alimuratkuslu/byok-observability-mcp/main/codex.yaml.example
+cp codex.yaml.example codex.yaml
+# Edit codex.yaml with your actual URLs and tokens
+```
+
+Add `codex.yaml` to your `.gitignore` to keep credentials out of version control.
+
+```yaml
+# codex.yaml
+mcpServers:
+  observability-mcp:
+    command: npx
+    args:
+      - "-y"
+      - "byok-observability-mcp"
+    env:
+      GRAFANA_URL: "https://grafana.mycompany.internal"
+      GRAFANA_TOKEN: "glsa_..."
+      # add only the backends you use
+```
+
+### 2 → Start Codex
+
+```bash
+codex
+```
+
+Codex reads `codex.yaml` automatically.
+
+### 3 → Verify
+
+```
+What observability tools do you have available?
+```
+
+### Keep credentials out of git
+
+Use `.env` + the included helper script:
+
+```bash
+cp .env.example .env
+# Edit .env with your values
+./scripts/run-codex-with-env.sh
+```
+
+---
+
+## 🛠 Tools
+
+<details open>
+<summary><strong>📊 Grafana</strong> — 5 tools</summary>
 
 > Enabled when `GRAFANA_URL` + `GRAFANA_TOKEN` are set.
 
@@ -88,7 +162,10 @@ Expected: Claude lists all tools for your configured backends.
 | `grafana_list_dashboards` | Search and list dashboards by name or tag |
 | `grafana_get_dashboard` | Get panels and metadata for a dashboard by UID |
 
-### Prometheus
+</details>
+
+<details>
+<summary><strong>🔥 Prometheus</strong> — 5 tools</summary>
 
 > Enabled when `PROMETHEUS_URL` is set.
 
@@ -96,11 +173,14 @@ Expected: Claude lists all tools for your configured backends.
 |------|-------------|
 | `prometheus_health` | Check connectivity |
 | `prometheus_query` | Instant PromQL query — current value of a metric |
-| `prometheus_query_range` | Range PromQL query — how a metric changed over time |
+| `prometheus_query_range` | Range PromQL query — metric values over time |
 | `prometheus_list_metrics` | List all available metric names |
 | `prometheus_metric_metadata` | Get help text and type for a specific metric |
 
-### Kafka UI
+</details>
+
+<details>
+<summary><strong>📨 Kafka UI</strong> — 6 tools</summary>
 
 > Enabled when `KAFKA_UI_URL` is set.
 
@@ -113,7 +193,10 @@ Expected: Claude lists all tools for your configured backends.
 | `kafka_consumer_group_lag` | Get per-partition lag for a consumer group |
 | `kafka_broker_health` | Broker count and disk usage per broker |
 
-### Datadog
+</details>
+
+<details>
+<summary><strong>🐕 Datadog</strong> — proxied via official server</summary>
 
 > Enabled when both `DD_API_KEY` and `DD_APP_KEY` are set. Proxies the [official Datadog MCP server](https://docs.datadoghq.com/developers/mcp/).
 
@@ -136,12 +219,14 @@ Default toolsets: `core`, `apm`, `alerting`. Set `DD_TOOLSETS=all` to load every
 | `cases` | Case management |
 | `feature-flags` | Feature flag tracking |
 
+</details>
+
 ---
 
-## Getting credentials
+## 🔑 Getting credentials
 
 <details>
-<summary><strong>Grafana — service account token</strong></summary>
+<summary><strong>📊 Grafana — service account token</strong></summary>
 
 1. Open Grafana → **Administration** → **Users and access** → **Service accounts**
 2. Click **Add service account** → set Role to `Viewer` → **Create**
@@ -161,7 +246,7 @@ GRAFANA_VERIFY_SSL=false
 </details>
 
 <details>
-<summary><strong>Prometheus — URL (+ optional basic auth)</strong></summary>
+<summary><strong>🔥 Prometheus — URL (+ optional basic auth)</strong></summary>
 
 If Prometheus has no authentication:
 ```
@@ -178,7 +263,7 @@ PROMETHEUS_PASSWORD=your-password
 </details>
 
 <details>
-<summary><strong>Kafka UI — URL (+ optional login)</strong></summary>
+<summary><strong>📨 Kafka UI — URL (+ optional login)</strong></summary>
 
 If Kafka UI has no authentication:
 ```
@@ -195,7 +280,7 @@ KAFKA_UI_PASSWORD=your-password
 </details>
 
 <details>
-<summary><strong>Datadog — API key + Application key</strong></summary>
+<summary><strong>🐕 Datadog — API key + Application key</strong></summary>
 
 **API key:** Datadog → **Organization Settings** → **API Keys** → New Key
 
@@ -204,7 +289,7 @@ KAFKA_UI_PASSWORD=your-password
 **DD_SITE** — match your Datadog login URL:
 
 | Login URL | DD_SITE |
-|-----------|---------|
+|-----------|---------| 
 | `app.datadoghq.com` | `datadoghq.com` (default) |
 | `app.us3.datadoghq.com` | `us3.datadoghq.com` |
 | `app.us5.datadoghq.com` | `us5.datadoghq.com` |
@@ -222,7 +307,7 @@ DD_TOOLSETS=core,apm,alerting
 
 ---
 
-## Configuration
+## ⚙️ Configuration
 
 ### Method A — Values directly in `.mcp.json` (simplest)
 
@@ -230,7 +315,8 @@ Put credentials directly in `.mcp.json`. Works everywhere, no extra steps.
 
 Add `.mcp.json` to your `.gitignore` if the repo is shared.
 
-### Method B — Keep credentials out of git
+<details>
+<summary><strong>Method B — Keep credentials out of git</strong></summary>
 
 Use `${VAR}` placeholders in `.mcp.json` and put real values in `.env`.
 
@@ -276,7 +362,10 @@ A ready-made helper script is included:
 
 A template `.mcp.json` with all variables is available as [`.mcp.json.example`](./.mcp.json.example).
 
-### Method C — Global config (available in every project)
+</details>
+
+<details>
+<summary><strong>Method C — Global config (available in every project)</strong></summary>
 
 Add to `~/.claude.json`:
 
@@ -295,118 +384,85 @@ Add to `~/.claude.json`:
 }
 ```
 
+</details>
+
 ---
 
-## Environment variables
+## 📋 Environment variables
 
 | Variable | Backend | Required | Description |
-|----------|---------|----------|-------------|
-| `GRAFANA_URL` | Grafana | Yes | Base URL of your Grafana instance |
-| `GRAFANA_TOKEN` | Grafana | Yes | Service account token (Viewer role) |
-| `GRAFANA_VERIFY_SSL` | Grafana | No | Set to `false` to skip TLS verification |
-| `PROMETHEUS_URL` | Prometheus | Yes | Base URL of your Prometheus instance |
-| `PROMETHEUS_USERNAME` | Prometheus | No | Basic auth username |
-| `PROMETHEUS_PASSWORD` | Prometheus | No | Basic auth password |
-| `KAFKA_UI_URL` | Kafka UI | Yes | Base URL of your Kafka UI instance |
-| `KAFKA_UI_USERNAME` | Kafka UI | No | Login username |
-| `KAFKA_UI_PASSWORD` | Kafka UI | No | Login password |
-| `DD_API_KEY` | Datadog | Yes | Datadog API key |
-| `DD_APP_KEY` | Datadog | Yes | Datadog Application key |
-| `DD_SITE` | Datadog | No | Datadog site (default: `datadoghq.com`) |
-| `DD_TOOLSETS` | Datadog | No | Tool groups to load (default: `core,apm,alerting`) |
+|----------|---------|:--------:|-------------|
+| `GRAFANA_URL` | 📊 Grafana | ✅ | Base URL of your Grafana instance |
+| `GRAFANA_TOKEN` | 📊 Grafana | ✅ | Service account token (Viewer role) |
+| `GRAFANA_VERIFY_SSL` | 📊 Grafana | | Set to `false` to skip TLS verification |
+| `PROMETHEUS_URL` | 🔥 Prometheus | ✅ | Base URL of your Prometheus instance |
+| `PROMETHEUS_USERNAME` | 🔥 Prometheus | | Basic auth username |
+| `PROMETHEUS_PASSWORD` | 🔥 Prometheus | | Basic auth password |
+| `KAFKA_UI_URL` | 📨 Kafka UI | ✅ | Base URL of your Kafka UI instance |
+| `KAFKA_UI_USERNAME` | 📨 Kafka UI | | Login username |
+| `KAFKA_UI_PASSWORD` | 📨 Kafka UI | | Login password |
+| `DD_API_KEY` | 🐕 Datadog | ✅ | Datadog API key |
+| `DD_APP_KEY` | 🐕 Datadog | ✅ | Datadog Application key |
+| `DD_SITE` | 🐕 Datadog | | Datadog site (default: `datadoghq.com`) |
+| `DD_TOOLSETS` | 🐕 Datadog | | Tool groups to load (default: `core,apm,alerting`) |
 
 ---
 
-## Example prompts
+## 💬 Example prompts
 
-### Grafana
+### Single-backend queries
 
-```
-List all Grafana datasources and tell me which ones are Prometheus type.
-```
+| Backend | Try asking Claude... |
+|---------|---------------------|
+| 📊 Grafana | *"List all datasources and tell me which ones are Prometheus type."* |
+| 📊 Grafana | *"Search for dashboards related to 'kubernetes' — list names and UIDs."* |
+| 📊 Grafana | *"Query `http_requests_total` rate over the last hour via the default Prometheus datasource."* |
+| 🔥 Prometheus | *"What is the current value of the `up` metric? Which targets are down?"* |
+| 🔥 Prometheus | *"Show CPU usage (`node_cpu_seconds_total` rate) over the past hour, by instance."* |
+| 🔥 Prometheus | *"List all available metrics that start with `http_`."* |
+| 📨 Kafka UI | *"List all Kafka clusters. Are there any with offline brokers?"* |
+| 📨 Kafka UI | *"Describe the topic 'orders' in cluster 'production' — partitions and replication factor?"* |
+| 📨 Kafka UI | *"Check consumer lag for group 'order-processor'. Which partitions have the highest lag?"* |
+| 🐕 Datadog | *"List all Datadog monitors currently in Alert state."* |
+| 🐕 Datadog | *"Show APM service performance for the past hour. Which services have the highest error rate?"* |
+| 🐕 Datadog | *"Query `aws.ec2.cpuutilization` for the last 30 minutes. Which hosts are above 80%?"* |
 
-```
-Search for dashboards related to "kubernetes" and list their names and UIDs.
-```
-
-```
-Query the metric 'http_requests_total' via the default Prometheus datasource. Show the rate over the last hour.
-```
-
-### Prometheus
-
-```
-What is the current value of the 'up' metric? Which targets are down?
-```
-
-```
-Show CPU usage (rate of node_cpu_seconds_total) over the past hour, broken down by instance.
-```
+### Cross-backend queries
 
 ```
-List all available metrics that start with 'http_'.
-```
-
-### Kafka UI
-
-```
-List all Kafka clusters. Are there any with offline brokers?
+Check the health of all configured observability backends and give me a summary.
 ```
 
 ```
-Describe the topic 'orders' in cluster 'production'. How many partitions and what is the replication factor?
-```
-
-```
-Check consumer lag for group 'order-processor' in cluster 'production'. Which partitions have the highest lag?
-```
-
-### Datadog
-
-```
-List all Datadog monitors that are currently in Alert state.
-```
-
-```
-Show APM service performance for the past hour. Which services have the highest error rate?
-```
-
-```
-Query 'aws.ec2.cpuutilization' for the last 30 minutes. Which hosts are above 80%?
-```
-
-### Cross-backend
-
-```
-Check the health of all configured observability backends and give me a summary of which ones are reachable.
-```
-
-```
-I'm seeing high error rates. Check Prometheus for http_requests_total with status=500, then look for related Datadog monitors that might be alerting.
+I'm seeing high error rates. Check Prometheus for http_requests_total with status=500,
+then look for related Datadog monitors that might be alerting.
 ```
 
 ---
 
-## Security
+## 🔒 Security
 
-- Credentials are read from environment variables and never logged or sent to Anthropic
-- Tokens are redacted in all error messages
+> [!NOTE]
+> All tools are **read-only**. No write operations are performed on any backend.
+
+> [!IMPORTANT]
+> Credentials are read from environment variables and **never logged or sent to Anthropic**. Tokens are redacted in all error messages.
+
 - TLS certificate verification is enabled by default
-- All tools are **read-only** — no write operations are performed on any backend
 - The MCP process runs locally — your infrastructure URLs only reach Claude's context window if you type them into the chat
 
 **Least-privilege recommendations:**
 
 | Backend | Recommended role |
-|---------|-----------------|
-| Grafana | Service account with **Viewer** role |
-| Prometheus | Network-level read-only access |
-| Kafka UI | Read-only UI user |
-| Datadog | API key + Application key with read scopes |
+|---------|-----------------| 
+| 📊 Grafana | Service account with **Viewer** role |
+| 🔥 Prometheus | Network-level read-only access |
+| 📨 Kafka UI | Read-only UI user |
+| 🐕 Datadog | API key + Application key with read scopes |
 
 ---
 
-## Development
+## 🧪 Development
 
 ```bash
 git clone https://github.com/alimuratkuslu/byok-observability-mcp
@@ -417,9 +473,46 @@ npm run build        # compile to dist/
 npm run typecheck    # TypeScript check without emitting
 ```
 
----
+### Local Sandbox
 
-## Tested versions
+A `docker-compose.yml` is included to spin up Grafana + Prometheus + Kafka UI locally for testing.
+
+```bash
+docker compose up -d
+```
+
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| 📊 Grafana | [localhost:3000](http://localhost:3000) | admin / admin |
+| 🔥 Prometheus | [localhost:9090](http://localhost:9090) | — |
+| 📨 Kafka UI | [localhost:8080](http://localhost:8080) | — |
+
+<details>
+<summary><strong>Full sandbox setup steps</strong></summary>
+
+1. **Get a Grafana token:** Open Grafana (port 3000) → Administration → Service accounts → Create with `Viewer` role → Generate token
+
+2. **Create `.env`** in the project root:
+   ```env
+   GRAFANA_URL=http://localhost:3000
+   GRAFANA_TOKEN=glsa_your_new_token
+   PROMETHEUS_URL=http://localhost:9090
+   KAFKA_UI_URL=http://localhost:8080
+   ```
+
+3. **Test with MCP Inspector:**
+   ```bash
+   set -a && source .env && set +a && npx @modelcontextprotocol/inspector node dist/index.js
+   ```
+
+4. **Shut down:**
+   ```bash
+   docker compose down
+   ```
+
+</details>
+
+### Tested versions
 
 | Backend | Tested version |
 |---------|---------------|

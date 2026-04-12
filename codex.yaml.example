@@ -1,0 +1,38 @@
+# byok-observability-mcp — OpenAI Codex CLI configuration
+#
+# Copy this file to codex.yaml, fill in your values, then run: codex
+# Add codex.yaml to .gitignore to keep credentials out of version control.
+#
+# Only include the backends you use — delete sections you don't need.
+
+mcpServers:
+  observability-mcp:
+    command: npx
+    args:
+      - "-y"
+      - "byok-observability-mcp"
+    env:
+      # ── Grafana ────────────────────────────────────────────────────────────
+      # Remove this block if you don't use Grafana.
+      GRAFANA_URL: "https://grafana.mycompany.internal"
+      GRAFANA_TOKEN: "glsa_xxxxxxxxxxxxxxxx"
+      # GRAFANA_VERIFY_SSL: "false"   # uncomment for self-signed certificates
+
+      # ── Prometheus ─────────────────────────────────────────────────────────
+      # Remove this block if you don't use Prometheus.
+      PROMETHEUS_URL: "https://prometheus.mycompany.internal"
+      # PROMETHEUS_USERNAME: "your-username"   # only needed with basic auth
+      # PROMETHEUS_PASSWORD: "your-password"
+
+      # ── Kafka UI ───────────────────────────────────────────────────────────
+      # Remove this block if you don't use Kafka UI.
+      KAFKA_UI_URL: "https://kafka-ui.mycompany.internal"
+      # KAFKA_UI_USERNAME: "admin"    # only needed with basic auth
+      # KAFKA_UI_PASSWORD: "your-password"
+
+      # ── Datadog ────────────────────────────────────────────────────────────
+      # Remove this block if you don't use Datadog (both keys are required).
+      DD_API_KEY: "your-datadog-api-key"
+      DD_APP_KEY: "your-datadog-application-key"
+      DD_SITE: "datadoghq.com"       # match your Datadog login URL region
+      # DD_TOOLSETS: "core,apm,alerting"  # default; use "all" for everything

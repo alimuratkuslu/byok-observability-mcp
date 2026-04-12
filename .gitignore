@@ -6,3 +6,9 @@ dist/
 
 # Local MCP config (copy from .mcp.json.example)
 .mcp.json
+
+# Local Codex CLI config (copy from codex.yaml.example)
+codex.yaml
+
+# Internal planning docs
+PRD.md
