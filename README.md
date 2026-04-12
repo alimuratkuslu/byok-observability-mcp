@@ -39,19 +39,25 @@
 
 ## How it works
 
-```
-Claude Code / Codex CLI
-        │
-        ▼
-byok-observability-mcp  (local npx process)
-        │
-        │  env vars — never leave your machine
-        ▼
-┌────────────────────────────────┐
-│  Grafana  ·  Prometheus        │
-│  Kafka UI ·  Datadog (proxy)   │
-└────────────────────────────────┘
-```
+<div align="center">
+  <img src="./assets/architecture.png" alt="Architecture Diagram" width="500" style="border-radius: 10px; margin-bottom: 20px;">
+
+<pre>
+     🤖 Claude Code / Codex CLI      
+                 │                   
+                 ▼                   
+     ⚡ byok-observability-mcp       
+        (Local npx process)          
+                 │                   
+  🔒 env vars never leave your machine 
+                 │                   
+                 ▼                   
+ ┌─────────────────────────────────┐ 
+ │  📊 Grafana     🔥 Prometheus   │ 
+ │  🛶 Kafka UI    🐶 Datadog      │ 
+ └─────────────────────────────────┘ 
+</pre>
+</div>
 
 ---
 
