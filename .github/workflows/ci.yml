@@ -38,8 +38,8 @@ jobs:
         with:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
-      # Trusted publishing requires npm >= 11.5.1 (Node 22 ships older npm)
-      - run: npm install -g npm@^11.5.1
       - run: npm ci
-      - run: npm publish --access public --provenance
-        # No NODE_AUTH_TOKEN: npm uses OIDC when Trusted Publisher is configured
+      # Trusted publishing needs npm >= 11.5.1. Avoid `npm install -g npm` on runners — it can break (e.g. MODULE_NOT_FOUND).
+      # Run publish with a pinned npm via npx instead.
+      - run: npx --yes npm@11.5.1 publish --access public --provenance
+        # No NODE_AUTH_TOKEN: OIDC when Trusted Publisher is configured on npmjs.com
