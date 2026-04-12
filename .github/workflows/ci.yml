@@ -1,3 +1,11 @@
+# Build: every push
+# Publish: git tag v*.*.* — uses npm Trusted Publishing (OIDC), no NPM_TOKEN.
+#
+# Setup on npmjs.com (once per package):
+# Package → byok-observability-mcp → Publishing access / package settings → Trusted Publisher
+# → GitHub Actions: owner/repo = alimuratkuslu/byok-observability-mcp, workflow file = ci.yml
+# (filename must match this file exactly, case-sensitive)
+
 name: CI
 
 on:
@@ -12,8 +20,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: '22'
       - run: npm ci
       - run: npm run build
       - run: npm run typecheck
@@ -22,13 +29,17 @@ jobs:
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # OIDC → npm Trusted Publishing
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           registry-url: 'https://registry.npmjs.org'
+      # Trusted publishing requires npm >= 11.5.1 (Node 22 ships older npm)
+      - run: npm install -g npm@^11.5.1
       - run: npm ci
-      - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish --access public --provenance
+        # No NODE_AUTH_TOKEN: npm uses OIDC when Trusted Publisher is configured
