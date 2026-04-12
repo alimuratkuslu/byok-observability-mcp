@@ -9,7 +9,9 @@
   "files": [
     "dist",
     "README.md",
-    ".env.example"
+    ".env.example",
+    ".mcp.json.example",
+    "scripts/run-claude-with-env.sh"
   ],
   "scripts": {
     "build": "tsup",
@@ -19,7 +21,7 @@
     "prepublishOnly": "npm run build && npm run typecheck"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {

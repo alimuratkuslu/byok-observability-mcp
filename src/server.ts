@@ -2,12 +2,13 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  type Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 
 import { grafanaTools, handleGrafanaTool } from "./tools/grafana.js";
 import { prometheusTools, handlePrometheusTool } from "./tools/prometheus.js";
 import { kafkaUiTools, handleKafkaUiTool } from "./tools/kafka-ui.js";
-import { loadConfig } from "./config.js";
+import { loadConfig, notConfiguredError } from "./config.js";
 import type { DatadogConfig } from "./config.js";
 import { DatadogProxy, formatDatadogInitError } from "./proxies/datadog.js";
 
@@ -41,13 +42,16 @@ export async function createServer(): Promise<Server> {
     { capabilities: { tools: {} } }
   );
 
-  const datadogToolNames = new Set(datadogProxy.tools.map((t) => t.name));
-  const allTools = [
-    ...grafanaTools,
-    ...prometheusTools,
-    ...kafkaUiTools,
-    ...datadogProxy.tools,
-  ];
+  // Only expose tools for backends the user configured (BYOK partial setup).
+  const allTools: Tool[] = [];
+  if (config.grafana.enabled) allTools.push(...grafanaTools);
+  if (config.prometheus.enabled) allTools.push(...prometheusTools);
+  if (config.kafkaUi.enabled) allTools.push(...kafkaUiTools);
+  if (datadogProxy.isConnected) allTools.push(...datadogProxy.tools);
+
+  const datadogToolNames = datadogProxy.isConnected
+    ? new Set(datadogProxy.tools.map((t) => t.name))
+    : new Set<string>();
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: allTools,
@@ -62,11 +66,17 @@ export async function createServer(): Promise<Server> {
     if (datadogToolNames.has(name)) {
       text = await datadogProxy.callTool(name, args);
     } else if (name.startsWith("grafana_")) {
-      text = await handleGrafanaTool(name, args, config);
+      text = config.grafana.enabled
+        ? await handleGrafanaTool(name, args, config)
+        : notConfiguredError("Grafana", "GRAFANA_URL and GRAFANA_TOKEN");
     } else if (name.startsWith("prometheus_")) {
-      text = await handlePrometheusTool(name, args, config);
+      text = config.prometheus.enabled
+        ? await handlePrometheusTool(name, args, config)
+        : notConfiguredError("Prometheus", "PROMETHEUS_URL");
     } else if (name.startsWith("kafka_")) {
-      text = await handleKafkaUiTool(name, args, config);
+      text = config.kafkaUi.enabled
+        ? await handleKafkaUiTool(name, args, config)
+        : notConfiguredError("Kafka UI", "KAFKA_UI_URL");
     } else {
       text = JSON.stringify({ error: `Unknown tool: ${name}` });
     }

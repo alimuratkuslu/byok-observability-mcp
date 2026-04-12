@@ -62,6 +62,12 @@ export function loadConfig(): Config {
         token: grafanaToken,
         verifySsl: process.env["GRAFANA_VERIFY_SSL"] !== "false",
       };
+      if (grafana.enabled && !grafana.verifySsl) {
+        process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
+        process.stderr.write(
+          "[observability-mcp] WARNING: TLS certificate verification is disabled (GRAFANA_VERIFY_SSL=false).\n"
+        );
+      }
     }
   }
 

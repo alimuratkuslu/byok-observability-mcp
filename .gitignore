@@ -2,3 +2,7 @@ node_modules/
 dist/
 .env
 *.js.map
+*.tgz
+
+# Local MCP config (copy from .mcp.json.example)
+.mcp.json

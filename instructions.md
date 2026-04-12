@@ -24,6 +24,8 @@ Before you start, make sure you have:
 - **Claude Code CLI** — installed and signed in (`claude --version`)
 - Network access to at least one of your backends (Grafana, Prometheus, Kafka UI, or Datadog)
 
+**Partial configuration:** Set environment variables only for the stacks you use. The server **registers MCP tools only for configured backends** (for example, Grafana-only → only `grafana_*` tools appear). You do not need Prometheus, Kafka UI, or Datadog env vars unless you want those tools. If nothing is configured, the tool list is empty until you add at least one backend.
+
 ---
 
 ## 2. Install
@@ -164,61 +166,89 @@ Use `DD_TOOLSETS=all` to load all available Datadog tools.
 
 ## 4. Configure Claude Code
 
-You have two options. Both work — pick whichever you prefer.
+### Method A0 (simplest): `.env` + one `mcp add` — no secrets in the command
 
-### Method A: Claude Code CLI (recommended)
+Use this if your Claude Code version **passes the parent process environment** to the MCP subprocess (common when you start `claude` from a terminal).
 
-Run this command and replace the placeholder values with your actual credentials. Only include `--env` flags for backends you want to enable.
+1. In your **project directory**:
+
+   ```bash
+   curl -sO https://raw.githubusercontent.com/alimuratkuslu/byok-observability-mcp/main/.env.example
+   cp .env.example .env
+   ```
+
+   Edit **`.env`** with your URLs and tokens. Never commit `.env`.
+
+2. Register the MCP **once** (no `--env`, no keys on this line):
+
+   ```bash
+   claude mcp add --transport stdio observability-mcp --scope project -- npx -y byok-observability-mcp
+   ```
+
+3. **Every time** you open Claude Code for this project, load `.env` first, then start Claude:
+
+   ```bash
+   set -a && source .env && set +a && claude
+   ```
+
+If tools return “not configured” even though `.env` is correct, your client may not inherit env for MCP — use **Method A1**.
+
+---
+
+### Method A1: `.mcp.json` + `${VAR}` (when env inheritance is not enough)
+
+1. Copy both example files into the project root:
+
+   ```bash
+   curl -sO https://raw.githubusercontent.com/alimuratkuslu/byok-observability-mcp/main/.mcp.json.example
+   curl -sO https://raw.githubusercontent.com/alimuratkuslu/byok-observability-mcp/main/.env.example
+   mv .mcp.json.example .mcp.json
+   cp .env.example .env
+   ```
+
+   From npm: `cp node_modules/byok-observability-mcp/.mcp.json.example .mcp.json` (and `.env.example` → `.env`).
+
+2. Edit **`.env`** only.
+
+3. Run the same one-line add as A0 (still no secrets in the command):
+
+   ```bash
+   claude mcp add --transport stdio observability-mcp --scope project -- npx -y byok-observability-mcp
+   ```
+
+4. If `claude mcp add` **overwrote** `.mcp.json`, open `.mcp.json` and **merge** the `"env": { … "${VAR}" … }` block from [`.mcp.json.example`](./.mcp.json.example) into the `observability-mcp` server entry (or replace the server entry with the example).
+
+5. Start Claude with `.env` loaded so `${VAR}` expands:
+
+   ```bash
+   set -a && source .env && set +a && claude
+   ```
+
+   Or, from a clone of this repo: `./scripts/run-claude-with-env.sh`
+
+**Why A1:** `.mcp.json` lists `GRAFANA_URL: "${GRAFANA_URL}"` etc. Values stay in `.gitignore`d `.env`; nothing secret is in the `claude mcp add` line.
+
+---
+
+### Method B: all credentials inline (not recommended)
+
+Only if you accept secrets in shell history / config files:
 
 ```bash
 claude mcp add --transport stdio observability-mcp \
   --env GRAFANA_URL="https://grafana.myco.internal" \
   --env GRAFANA_TOKEN="glsa_..." \
-  --env PROMETHEUS_URL="https://prometheus.myco.internal" \
-  --env KAFKA_UI_URL="https://kafka-ui.myco.internal" \
-  --env KAFKA_UI_USERNAME="admin" \
-  --env KAFKA_UI_PASSWORD="your-password" \
-  --env DD_API_KEY="your-datadog-api-key" \
-  --env DD_APP_KEY="your-datadog-application-key" \
-  --env DD_SITE="datadoghq.com" \
-  --env DD_TOOLSETS="core,apm,alerting" \
+  ... \
   -- npx -y byok-observability-mcp
 ```
 
-That's it — no clone, no build, no path to configure.
-
 ---
 
-### Method B: Edit `~/.claude.json` directly
+### Method C: global `~/.claude.json` with literal env values
 
-Open `~/.claude.json` (create it if it doesn't exist) and add the `mcpServers` section:
+Open `~/.claude.json` and add `mcpServers` (same shape as `.mcp.json.example` but with **literal** strings instead of `${VAR}`). Remove any keys you don't need.
 
-```json
-{
-  "mcpServers": {
-    "observability-mcp": {
-      "command": "npx",
-      "args": ["-y", "byok-observability-mcp"],
-      "env": {
-        "GRAFANA_URL": "https://grafana.myco.internal",
-        "GRAFANA_TOKEN": "glsa_...",
-        "PROMETHEUS_URL": "https://prometheus.myco.internal",
-        "KAFKA_UI_URL": "https://kafka-ui.myco.internal",
-        "KAFKA_UI_USERNAME": "admin",
-        "KAFKA_UI_PASSWORD": "your-password",
-        "DD_API_KEY": "your-datadog-api-key",
-        "DD_APP_KEY": "your-datadog-application-key",
-        "DD_SITE": "datadoghq.com",
-        "DD_TOOLSETS": "core,apm,alerting"
-      }
-    }
-  }
-}
-```
-
-Remove any keys you don't need. Tools for unconfigured backends will return a "not configured" message instead of crashing.
-
-**Running from source?** Replace `command` and `args` with:
+**Running from source?** Replace `command` / `args` with:
 
 ```json
 "command": "node",

@@ -4,30 +4,33 @@ A single MCP (Model Context Protocol) server that lets Claude Code query your se
 
 No data is sent to any hosted service. Your credentials stay in your environment variables, and all traffic flows directly between the MCP process on your machine and your own infrastructure.
 
+**Partial setup:** Configure only the backends you need (e.g. just `GRAFANA_URL` + `GRAFANA_TOKEN`). The MCP **lists only tools for those backends**; others stay hidden so the model does not call them by mistake. Unconfigured backends are not errors at startup.
+
 > See [PRD.md](./PRD.md) for the full product vision, BYOK model, security design, and roadmap.
 
 ---
 
-## Quick Start
+## Quick Start (Claude Code)
 
-Add to Claude Code with a single command. Only include `--env` flags for the backends you actually have.
+**Secrets only in `.env` — not in the `claude mcp add` line.**
 
-```bash
-claude mcp add --transport stdio observability-mcp \
-  --env GRAFANA_URL="https://grafana.myco.internal" \
-  --env GRAFANA_TOKEN="glsa_..." \
-  --env PROMETHEUS_URL="https://prometheus.myco.internal" \
-  --env KAFKA_UI_URL="https://kafka-ui.myco.internal" \
-  --env KAFKA_UI_USERNAME="admin" \
-  --env KAFKA_UI_PASSWORD="your-password" \
-  --env DD_API_KEY="your-datadog-api-key" \
-  --env DD_APP_KEY="your-datadog-application-key" \
-  --env DD_SITE="datadoghq.com" \
-  --env DD_TOOLSETS="core,apm,alerting" \
-  -- npx -y byok-observability-mcp
-```
+1. Download [`.env.example`](./.env.example) → save as `.env` in your project and fill in URLs/tokens.
 
-No clone or build step required. See [instructions.md](./instructions.md) for step-by-step credential setup and example prompts.
+2. Register the MCP once (**no** `--env` flags):
+
+   ```bash
+   claude mcp add --transport stdio observability-mcp --scope project -- npx -y byok-observability-mcp
+   ```
+
+3. Start Claude after loading `.env`:
+
+   ```bash
+   set -a && source .env && set +a && claude
+   ```
+
+If tools appear “not configured” even with `.env` set, use [`.mcp.json.example`](./.mcp.json.example) → `.mcp.json` with `${VAR}` placeholders (see [instructions.md](./instructions.md) **Method A1**).
+
+No clone or build required for end users.
 
 ---
 

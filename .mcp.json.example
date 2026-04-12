@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "observability-mcp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "byok-observability-mcp"],
+      "env": {
+        "GRAFANA_URL": "${GRAFANA_URL}",
+        "GRAFANA_TOKEN": "${GRAFANA_TOKEN}",
+        "GRAFANA_VERIFY_SSL": "${GRAFANA_VERIFY_SSL}",
+        "PROMETHEUS_URL": "${PROMETHEUS_URL}",
+        "PROMETHEUS_USERNAME": "${PROMETHEUS_USERNAME}",
+        "PROMETHEUS_PASSWORD": "${PROMETHEUS_PASSWORD}",
+        "KAFKA_UI_URL": "${KAFKA_UI_URL}",
+        "KAFKA_UI_USERNAME": "${KAFKA_UI_USERNAME}",
+        "KAFKA_UI_PASSWORD": "${KAFKA_UI_PASSWORD}",
+        "DD_API_KEY": "${DD_API_KEY}",
+        "DD_APP_KEY": "${DD_APP_KEY}",
+        "DD_SITE": "${DD_SITE}",
+        "DD_TOOLSETS": "${DD_TOOLSETS}"
+      }
+    }
+  }
+}
