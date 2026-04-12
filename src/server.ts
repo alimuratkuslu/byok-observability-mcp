@@ -9,6 +9,8 @@ import { grafanaTools, handleGrafanaTool } from "./tools/grafana.js";
 import { prometheusTools, handlePrometheusTool } from "./tools/prometheus.js";
 import { kafkaUiTools, handleKafkaUiTool } from "./tools/kafka-ui.js";
 import { healthCheckTool, handleHealthCheck } from "./tools/health.js";
+import { opsgenieTools, handleOpsgenieTool } from "./tools/opsgenie.js";
+import { investigateTool, handleInvestigateIncident } from "./tools/investigate.js";
 import { loadConfig, notConfiguredError } from "./config.js";
 import type { DatadogConfig } from "./config.js";
 import { DatadogProxy, formatDatadogInitError } from "./proxies/datadog.js";
@@ -48,8 +50,10 @@ export async function createServer(): Promise<Server> {
   if (config.grafana.enabled) allTools.push(...grafanaTools);
   if (config.prometheus.enabled) allTools.push(...prometheusTools);
   if (config.kafkaUi.enabled) allTools.push(...kafkaUiTools);
+  if (config.opsgenie.enabled) allTools.push(...opsgenieTools);
   if (datadogProxy.isConnected) allTools.push(...datadogProxy.tools);
-  allTools.push(healthCheckTool); // always available regardless of backend config
+  allTools.push(healthCheckTool); // always available
+  allTools.push(investigateTool); // always available
 
   const datadogToolNames = datadogProxy.isConnected
     ? new Set(datadogProxy.tools.map((t) => t.name))
@@ -67,6 +71,8 @@ export async function createServer(): Promise<Server> {
 
     if (name === "obs_health_check") {
       text = await handleHealthCheck(config, datadogProxy);
+    } else if (name === "obs_investigate_incident") {
+      text = await handleInvestigateIncident(config, datadogProxy);
     } else if (datadogToolNames.has(name)) {
       text = await datadogProxy.callTool(name, args);
     } else if (name.startsWith("grafana_")) {
@@ -81,6 +87,10 @@ export async function createServer(): Promise<Server> {
       text = config.kafkaUi.enabled
         ? await handleKafkaUiTool(name, args, config)
         : notConfiguredError("Kafka UI", "KAFKA_UI_URL");
+    } else if (name.startsWith("opsgenie_")) {
+      text = config.opsgenie.enabled
+        ? await handleOpsgenieTool(name, args, config)
+        : notConfiguredError("OpsGenie", "OPSGENIE_API_KEY");
     } else {
       text = JSON.stringify({ error: `Unknown tool: ${name}` });
     }
@@ -95,6 +105,7 @@ export async function createServer(): Promise<Server> {
   if (config.grafana.enabled) enabled.push("Grafana");
   if (config.prometheus.enabled) enabled.push("Prometheus");
   if (config.kafkaUi.enabled) enabled.push("Kafka UI");
+  if (config.opsgenie.enabled) enabled.push("OpsGenie");
   if (datadogProxy.isConnected) enabled.push(`Datadog (${datadogProxy.tools.length} tools)`);
 
   if (enabled.length === 0) {

@@ -27,11 +27,19 @@ export interface DatadogConfig {
   toolsets: string;
 }
 
+export interface OpsGenieConfig {
+  enabled: true;
+  apiKey: string;
+  apiUrl: string;
+  allowWrite: boolean;
+}
+
 export interface Config {
   grafana: GrafanaConfig | { enabled: false };
   prometheus: PrometheusConfig | { enabled: false };
   kafkaUi: KafkaUiConfig | { enabled: false };
   datadog: DatadogConfig | { enabled: false };
+  opsgenie: OpsGenieConfig | { enabled: false };
 }
 
 function trimTrailingSlash(url: string): string {
@@ -109,7 +117,18 @@ export function loadConfig(): Config {
     );
   }
 
-  return { grafana, prometheus, kafkaUi, datadog };
+  const opsGenieApiKey = process.env["OPSGENIE_API_KEY"];
+  let opsgenie: Config["opsgenie"] = { enabled: false };
+  if (opsGenieApiKey) {
+    opsgenie = {
+      enabled: true,
+      apiKey: opsGenieApiKey,
+      apiUrl: trimTrailingSlash(process.env["OPSGENIE_API_URL"] || "api.opsgenie.com"),
+      allowWrite: process.env["OPSGENIE_ALLOW_WRITE"] === "true",
+    };
+  }
+
+  return { grafana, prometheus, kafkaUi, datadog, opsgenie };
 }
 
 export interface ReportConfig {
