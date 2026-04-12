@@ -40,8 +40,6 @@
 ## How it works
 
 <div align="center">
-  <img src="./assets/architecture.png" alt="Architecture Diagram" width="500" style="border-radius: 10px; margin-bottom: 20px;">
-
 <pre>
      🤖 Claude Code / Codex CLI      
                  │                   
