@@ -1,10 +1,5 @@
 # Build: every push
-# Publish: git tag v*.*.* — uses npm Trusted Publishing (OIDC), no NPM_TOKEN.
-#
-# Setup on npmjs.com (once per package):
-# Package → byok-observability-mcp → Publishing access / package settings → Trusted Publisher
-# → GitHub Actions: owner/repo = alimuratkuslu/byok-observability-mcp, workflow file = ci.yml
-# (filename must match this file exactly, case-sensitive)
+# Publish: git tag v*.*.* — requires NPM_TOKEN secret in repo Settings → Secrets → Actions.
 
 name: CI
 
@@ -44,3 +39,5 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           npm version "$VERSION" --no-git-tag-version --allow-same-version
       - run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
