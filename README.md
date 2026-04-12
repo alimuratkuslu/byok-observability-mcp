@@ -8,6 +8,7 @@
   [![npm version](https://img.shields.io/npm/v/byok-observability-mcp)](https://www.npmjs.com/package/byok-observability-mcp)
   [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
   [![Node ≥18](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
+  [![alimuratkuslu/byok-observability-mcp MCP server](https://glama.ai/mcp/servers/alimuratkuslu/byok-observability-mcp/badges/score.svg)](https://glama.ai/mcp/servers/alimuratkuslu/byok-observability-mcp)
 
   <p>
     <img src="https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white" alt="Grafana">
@@ -28,6 +29,7 @@
   <a href="#-available-tools">Tools</a> · 
   <a href="#-getting-credentials">Credentials</a> · 
   <a href="#%EF%B8%8F-configuration">Configuration</a> · 
+  <a href="#-scheduled-reports">Scheduled Reports</a> · 
   <a href="#-example-prompts">Examples</a> · 
   <a href="#-security">Security</a> · 
   <a href="#-development">Development</a>
@@ -418,6 +420,135 @@ Add to `~/.claude.json`:
 | `DD_APP_KEY` | Datadog | ✅ | Datadog Application key |
 | `DD_SITE` | Datadog | | Datadog site (default: `datadoghq.com`) |
 | `DD_TOOLSETS` | Datadog | | Tool groups to load (default: `core,apm,alerting`) |
+| `SLACK_WEBHOOK_URL` | Reports | ✅* | Slack Incoming Webhook URL for scheduled reports |
+| `REPORT_BACKENDS` | Reports | | Comma-separated backends to include in reports (default: all configured) |
+
+---
+
+## 📊 Scheduled Reports
+
+Send an automated observability digest to Slack on a schedule — no Claude or Codex instance needs to be running.
+
+### How it works
+
+```
+cron / launchd
+     │  fires every N minutes
+     ▼
+npx byok-observability-mcp --report
+     │
+     │  reads env vars, connects directly to backends
+     ▼
+Grafana · Prometheus · Kafka UI
+     │
+     │  categorizes findings → P0 / P1 / P2 / P3
+     ▼
+Slack Incoming Webhook  →  #your-channel
+```
+
+The command collects data, categorizes every finding by severity, formats a Slack message, sends it, and exits. It is completely stateless.
+
+### Severity levels
+
+| Level | Meaning | Examples |
+|-------|---------|---------|
+| 🔴 **P0 — KRİTİK** | Service down or unreachable | Grafana alert firing (critical), Kafka cluster offline, backend unreachable |
+| 🟠 **P1 — YÜKSEK** | Degraded, action needed soon | Grafana alert firing (non-critical), Kafka consumer lag > 10 000 |
+| 🟡 **P2 — ORTA** | Warning, monitor closely | Grafana alert pending, Kafka consumer lag > 1 000 |
+| 🟢 **P3 — BİLGİ** | Informational, all normal | Healthy backends, silenced alerts |
+
+### Setup
+
+**Step 1 — Get a Slack Incoming Webhook URL**
+
+1. Go to [api.slack.com/apps](https://api.slack.com/apps) → **Create New App** → **From scratch**
+2. **Incoming Webhooks** → toggle on → **Add New Webhook to Workspace**
+3. Pick a channel → **Allow** → copy the Webhook URL
+
+**Step 2 — Set environment variables**
+
+```bash
+export SLACK_WEBHOOK_URL=https://hooks.slack.com/services/XXX/YYY/ZZZ
+
+# Optional: restrict which backends are included (default: all configured)
+export REPORT_BACKENDS=grafana,prometheus,kafka
+```
+
+**Step 3 — Run a one-off report to verify**
+
+```bash
+npx byok-observability-mcp --report
+```
+
+You should see a message in your Slack channel within seconds.
+
+**Step 4 — Schedule with cron**
+
+Open your crontab:
+
+```bash
+crontab -e
+```
+
+Add a line. Examples:
+
+```cron
+# Every hour at minute 0
+0 * * * * SLACK_WEBHOOK_URL=https://hooks.slack.com/... GRAFANA_URL=... GRAFANA_TOKEN=... npx byok-observability-mcp --report >> /tmp/obs-report.log 2>&1
+
+# Every 30 minutes
+*/30 * * * * SLACK_WEBHOOK_URL=https://hooks.slack.com/... npx byok-observability-mcp --report >> /tmp/obs-report.log 2>&1
+```
+
+> [!TIP]
+> Put all env vars in a `.env` file and source it inside the cron command to keep the crontab clean:
+> ```cron
+> 0 * * * * bash -c 'source /path/to/.env && npx byok-observability-mcp --report' >> /tmp/obs-report.log 2>&1
+> ```
+
+**Alternative: macOS launchd (runs on login, survives reboots)**
+
+Create `~/Library/LaunchAgents/com.observability-mcp.report.plist`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.observability-mcp.report</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/npx</string>
+    <string>byok-observability-mcp</string>
+    <string>--report</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>SLACK_WEBHOOK_URL</key>
+    <string>https://hooks.slack.com/services/XXX/YYY/ZZZ</string>
+    <key>GRAFANA_URL</key>
+    <string>https://grafana.mycompany.internal</string>
+    <key>GRAFANA_TOKEN</key>
+    <string>glsa_...</string>
+  </dict>
+  <key>StartInterval</key>
+  <integer>3600</integer>
+  <key>StandardOutPath</key>
+  <string>/tmp/obs-report.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/obs-report.log</string>
+</dict>
+</plist>
+```
+
+Load it:
+
+```bash
+launchctl load ~/Library/LaunchAgents/com.observability-mcp.report.plist
+```
+
+To stop: `launchctl unload ~/Library/LaunchAgents/com.observability-mcp.report.plist`
 
 ---
 

@@ -112,6 +112,20 @@ export function loadConfig(): Config {
   return { grafana, prometheus, kafkaUi, datadog };
 }
 
+export interface ReportConfig {
+  slackWebhookUrl: string;
+  backends: string[]; // empty array = all configured backends
+}
+
+export function loadReportConfig(): ReportConfig {
+  const webhookUrl = process.env["SLACK_WEBHOOK_URL"] ?? "";
+  const backendsRaw = process.env["REPORT_BACKENDS"] ?? "";
+  const backends = backendsRaw
+    ? backendsRaw.split(",").map((b) => b.trim().toLowerCase())
+    : [];
+  return { slackWebhookUrl: webhookUrl, backends };
+}
+
 export function notConfiguredError(backend: string, envVar: string): string {
   return JSON.stringify({
     error: `${backend} is not configured.`,

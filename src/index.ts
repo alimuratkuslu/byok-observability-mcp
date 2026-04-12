@@ -9,6 +9,13 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
+  // One-shot observability report — collect data and send to Slack
+  if (process.argv.includes("--report")) {
+    const { runReport } = await import("./report/index.js");
+    await runReport();
+    process.exit(0);
+  }
+
   const server = await createServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
