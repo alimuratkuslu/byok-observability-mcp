@@ -55,9 +55,34 @@ byok-observability-mcp  (local npx process)
 
 ## ⚡ Quick Start
 
-### Step 1 — Create `.mcp.json` in your project root
+### Option A — Interactive wizard (recommended)
 
-Include **only** the backends you need. Delete the rest.
+Run once, answer a few questions, get a ready-made `.mcp.json`:
+
+```bash
+npx byok-observability-mcp --init
+```
+
+The wizard will:
+- Let you pick which backends to configure
+- Ask for credentials per service
+- Test connectivity with your real endpoints before writing anything
+- Write `.mcp.json` to your project root or `~/.claude/` — your choice
+
+Then just start Claude Code:
+
+```bash
+claude
+```
+
+> [!TIP]
+> **That's it.** No clone, no build, no env file. Works in under 60 seconds.
+
+---
+
+### Option B — Manual `.mcp.json`
+
+Create `.mcp.json` in your project root. Include **only** the backends you need.
 
 ```json
 {
@@ -80,7 +105,7 @@ Include **only** the backends you need. Delete the rest.
 
 > **Credentials in git?** Use the `${VAR}` approach instead — see [Configuration → Method B](#method-b--keep-credentials-out-of-git).
 
-### Step 2 — Start Claude Code
+Start Claude Code:
 
 ```bash
 claude
@@ -88,16 +113,11 @@ claude
 
 Claude Code reads `.mcp.json` automatically. No `claude mcp add`, no build step.
 
-### Step 3 — Verify
-
-Ask Claude:
+Verify by asking Claude:
 
 ```
 What observability tools do you have available?
 ```
-
-> [!TIP]
-> **That's it.** No clone, no build, no install. Works in under 60 seconds.
 
 ---
 
@@ -130,7 +150,18 @@ codex mcp add --transport stdio observability-mcp -- npx -y byok-observability-m
 ## 🔧 Available tools
 
 <details open>
-<summary><img src="https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white" alt="Grafana" height="18"> &nbsp;<strong>5 tools</strong></summary>
+<summary>🛰️ <strong>System</strong> — 1 tool</summary>
+
+> Always available. Checks connectivity across all configured backends.
+
+| Tool | Description |
+|------|-------------|
+| `obs_health_check` | **Unified Health Check.** Runs a parallel check on all backends and returns a status table. |
+
+</details>
+
+<details>
+<summary><img src="https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white" alt="Grafana" height="18"> &nbsp;<strong>7 tools</strong></summary>
 
 > Enabled when `GRAFANA_URL` + `GRAFANA_TOKEN` are set.
 
@@ -141,6 +172,8 @@ codex mcp add --transport stdio observability-mcp -- npx -y byok-observability-m
 | `grafana_query_metrics` | Run a PromQL expression via a Grafana datasource |
 | `grafana_list_dashboards` | Search and list dashboards by name or tag |
 | `grafana_get_dashboard` | Get panels and metadata for a dashboard by UID |
+| `grafana_list_alerts` | List active alerts from Alertmanager (firing/pending) |
+| `grafana_get_alert_rules` | List all configured alert rules across all folders |
 
 </details>
 
@@ -407,6 +440,14 @@ Add to `~/.claude.json`:
 | Datadog | *"Show APM service performance for the past hour. Which services have the highest error rate?"* |
 | Datadog | *"Query `aws.ec2.cpuutilization` for the last 30 minutes. Which hosts are above 80%?"* |
 
+### 🛠️ Incident Response (v0.2.0+)
+
+| Goal | Try asking Claude... |
+|------|---------------------|
+| Health | *"Run a health check on all systems."* |
+| Alerts | *"Are there any firing alerts in Grafana right now?"* |
+| Triage | *"Show me the alert rules for the 'Production' folder."* |
+
 ### Cross-backend queries
 
 ```
@@ -452,45 +493,6 @@ npm run dev          # run with tsx (no build step)
 npm run build        # compile to dist/
 npm run typecheck    # TypeScript check without emitting
 ```
-
-### Local Sandbox
-
-A `docker-compose.yml` is included to spin up Grafana + Prometheus + Kafka UI locally for testing.
-
-```bash
-docker compose up -d
-```
-
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| Grafana | [localhost:3000](http://localhost:3000) | admin / admin |
-| Prometheus | [localhost:9090](http://localhost:9090) | — |
-| Kafka UI | [localhost:8080](http://localhost:8080) | — |
-
-<details>
-<summary><strong>Full sandbox setup steps</strong></summary>
-
-1. **Get a Grafana token:** Open Grafana (port 3000) → Administration → Service accounts → Create with `Viewer` role → Generate token
-
-2. **Create `.env`** in the project root:
-   ```env
-   GRAFANA_URL=http://localhost:3000
-   GRAFANA_TOKEN=glsa_your_new_token
-   PROMETHEUS_URL=http://localhost:9090
-   KAFKA_UI_URL=http://localhost:8080
-   ```
-
-3. **Test with MCP Inspector:**
-   ```bash
-   set -a && source .env && set +a && npx @modelcontextprotocol/inspector node dist/index.js
-   ```
-
-4. **Shut down:**
-   ```bash
-   docker compose down
-   ```
-
-</details>
 
 ### Tested versions
 

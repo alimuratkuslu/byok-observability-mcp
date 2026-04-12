@@ -8,6 +8,7 @@ import {
 import { grafanaTools, handleGrafanaTool } from "./tools/grafana.js";
 import { prometheusTools, handlePrometheusTool } from "./tools/prometheus.js";
 import { kafkaUiTools, handleKafkaUiTool } from "./tools/kafka-ui.js";
+import { healthCheckTool, handleHealthCheck } from "./tools/health.js";
 import { loadConfig, notConfiguredError } from "./config.js";
 import type { DatadogConfig } from "./config.js";
 import { DatadogProxy, formatDatadogInitError } from "./proxies/datadog.js";
@@ -48,6 +49,7 @@ export async function createServer(): Promise<Server> {
   if (config.prometheus.enabled) allTools.push(...prometheusTools);
   if (config.kafkaUi.enabled) allTools.push(...kafkaUiTools);
   if (datadogProxy.isConnected) allTools.push(...datadogProxy.tools);
+  allTools.push(healthCheckTool); // always available regardless of backend config
 
   const datadogToolNames = datadogProxy.isConnected
     ? new Set(datadogProxy.tools.map((t) => t.name))
@@ -63,7 +65,9 @@ export async function createServer(): Promise<Server> {
 
     let text: string;
 
-    if (datadogToolNames.has(name)) {
+    if (name === "obs_health_check") {
+      text = await handleHealthCheck(config, datadogProxy);
+    } else if (datadogToolNames.has(name)) {
       text = await datadogProxy.callTool(name, args);
     } else if (name.startsWith("grafana_")) {
       text = config.grafana.enabled

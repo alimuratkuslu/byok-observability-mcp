@@ -2,6 +2,13 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { createServer, closeServer } from "./server.js";
 
 async function main(): Promise<void> {
+  // Interactive setup wizard
+  if (process.argv.includes("--init")) {
+    const { runWizard } = await import("./init.js");
+    await runWizard();
+    process.exit(0);
+  }
+
   const server = await createServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);

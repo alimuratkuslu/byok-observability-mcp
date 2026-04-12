@@ -51,6 +51,38 @@ export interface GrafanaHealth {
   version: string;
 }
 
+export interface GrafanaAlert {
+  labels: Record<string, string>;
+  annotations: Record<string, string>;
+  startsAt: string;
+  endsAt: string;
+  generatorURL: string;
+  status: {
+    state: "active" | "suppressed" | "unprocessed";
+    silencedBy: string[];
+    inhibitedBy: string[];
+  };
+  receivers: Array<{ name: string }>;
+  fingerprint: string;
+}
+
+export interface GrafanaAlertRule {
+  uid: string;
+  title: string;
+  condition: string;
+  noDataState: string;
+  execErrState: string;
+  for: string;
+  labels: Record<string, string>;
+  annotations: Record<string, string>;
+  folderUID: string;
+  ruleGroup: string;
+  isPaused: boolean;
+  orgID: number;
+  updated: string;
+  data: unknown[];
+}
+
 export interface GrafanaQueryResult {
   refId: string;
   frames: GrafanaDataFrame[];
@@ -174,6 +206,27 @@ export class GrafanaClient {
 
   async getDashboard(uid: string): Promise<GrafanaDashboard> {
     return this.request<GrafanaDashboard>(`/api/dashboards/uid/${uid}`);
+  }
+
+  async listAlerts(params: {
+    active?: boolean;
+    silenced?: boolean;
+    inhibited?: boolean;
+    filter?: string[];
+  }): Promise<GrafanaAlert[]> {
+    const qs = new URLSearchParams();
+    if (params.active !== undefined) qs.set("active", String(params.active));
+    if (params.silenced !== undefined) qs.set("silenced", String(params.silenced));
+    if (params.inhibited !== undefined) qs.set("inhibited", String(params.inhibited));
+    params.filter?.forEach((f) => qs.append("filter", f));
+    const q = qs.toString();
+    return this.request<GrafanaAlert[]>(
+      `/api/alertmanager/grafana/api/v2/alerts${q ? "?" + q : ""}`
+    );
+  }
+
+  async getAlertRules(): Promise<GrafanaAlertRule[]> {
+    return this.request<GrafanaAlertRule[]>("/api/v1/provisioning/alert-rules");
   }
 }
 

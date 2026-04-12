@@ -3,6 +3,7 @@ import {
   GrafanaClient,
   formatGrafanaError,
   type GrafanaDataFrame,
+  type GrafanaAlert,
 } from "../clients/grafana.js";
 import type { Config } from "../config.js";
 import { notConfiguredError } from "../config.js";
@@ -90,6 +91,38 @@ export const grafanaTools: Tool[] = [
         },
       },
       required: ["uid"],
+    },
+  },
+  {
+    name: "grafana_list_alerts",
+    description:
+      "List active (or filtered) alerts from Grafana Alertmanager. Supports filtering by state and label selectors. Returns alert name, state, severity, labels, annotations, and start time. Use this to answer 'are there any firing alerts right now?'",
+    inputSchema: {
+      type: "object",
+      properties: {
+        state: {
+          type: "string",
+          enum: ["firing", "pending", "resolved"],
+          description:
+            "Filter alerts by state. 'firing' = active, unsuppressed alerts. 'pending' = alerts in evaluation, not yet firing. 'resolved' = inactive alerts. Omit to get all alerts.",
+        },
+        labels: {
+          type: "string",
+          description:
+            "Comma-separated label matchers to filter alerts, e.g. 'team=backend,env=prod'. Each matcher is passed as a separate Alertmanager filter param.",
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "grafana_get_alert_rules",
+    description:
+      "List all configured Grafana alert rules from the provisioning API. Returns rule UID, title, condition, labels, annotations, folder, and rule group. Use this to see what alert rules are defined.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+      required: [],
     },
   },
 ];
@@ -221,6 +254,77 @@ export async function handleGrafanaTool(
               description: p.description,
             })),
           },
+          backend: "grafana",
+        });
+      }
+
+      case "grafana_list_alerts": {
+        const stateFilter = args["state"] as "firing" | "pending" | "resolved" | undefined;
+        const labelsArg = args["labels"] as string | undefined;
+
+        // Map user-facing state to Alertmanager v2 query params
+        let active: boolean | undefined;
+        let silenced: boolean | undefined;
+        let inhibited: boolean | undefined;
+
+        if (stateFilter === "firing") {
+          active = true;
+          silenced = false;
+          inhibited = false;
+        } else if (stateFilter === "resolved") {
+          active = false;
+        }
+        // "pending" and undefined: fetch without boolean filters, then client-side filter
+
+        const filter = labelsArg
+          ? labelsArg.split(",").map((s) => s.trim()).filter(Boolean)
+          : [];
+
+        const allAlerts = await client.listAlerts({ active, silenced, inhibited, filter });
+
+        // Client-side filter for "pending" (Alertmanager state: "unprocessed")
+        const alerts: GrafanaAlert[] = stateFilter === "pending"
+          ? allAlerts.filter((a) => a.status.state === "unprocessed")
+          : allAlerts;
+
+        const count = alerts.length;
+        const stateDesc = stateFilter ? ` with state "${stateFilter}"` : "";
+        return JSON.stringify({
+          summary: `Found ${count} alert(s)${stateDesc} in Grafana Alertmanager.`,
+          data: alerts.map((a) => ({
+            name: a.labels["alertname"] ?? "(unnamed)",
+            state: a.status.state,
+            severity: a.labels["severity"] ?? "unknown",
+            labels: a.labels,
+            annotations: a.annotations,
+            startsAt: a.startsAt,
+            generatorURL: a.generatorURL,
+            silencedBy: a.status.silencedBy,
+            inhibitedBy: a.status.inhibitedBy,
+          })),
+          backend: "grafana",
+        });
+      }
+
+      case "grafana_get_alert_rules": {
+        const rules = await client.getAlertRules();
+        const count = rules.length;
+        const groups = [...new Set(rules.map((r) => r.ruleGroup))];
+        return JSON.stringify({
+          summary: `Found ${count} alert rule(s) in Grafana across ${groups.length} rule group(s).`,
+          data: rules.map((r) => ({
+            uid: r.uid,
+            title: r.title,
+            condition: r.condition,
+            labels: r.labels,
+            annotations: r.annotations,
+            folderUID: r.folderUID,
+            ruleGroup: r.ruleGroup,
+            for: r.for,
+            noDataState: r.noDataState,
+            isPaused: r.isPaused,
+            updated: r.updated,
+          })),
           backend: "grafana",
         });
       }
