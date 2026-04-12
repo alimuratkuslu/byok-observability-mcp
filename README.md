@@ -1,15 +1,20 @@
 <div align="center">
+  <img src="./assets/logo.png" height="120" alt="byok-observability-mcp">
 
-# 🔭 byok-observability-mcp
+  <h1>byok-observability-mcp</h1>
 
-**Query your observability stack from Claude Code — no data leaves your machine.**
+  <p><strong>Query your observability stack from Claude Code — no data leaves your machine.</strong></p>
 
-[![npm version](https://img.shields.io/npm/v/byok-observability-mcp)](https://www.npmjs.com/package/byok-observability-mcp)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![Node ≥18](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
+  [![npm version](https://img.shields.io/npm/v/byok-observability-mcp)](https://www.npmjs.com/package/byok-observability-mcp)
+  [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+  [![Node ≥18](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
 
-📊 Grafana &nbsp;·&nbsp; 🔥 Prometheus &nbsp;·&nbsp; 📨 Kafka UI &nbsp;·&nbsp; 🐕 Datadog
-
+  <p>
+    <img src="https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white" alt="Grafana">
+    <img src="https://img.shields.io/badge/Prometheus-E6522C?logo=prometheus&logoColor=white" alt="Prometheus">
+    <img src="https://img.shields.io/badge/Kafka_UI-231F20?logo=apachekafka&logoColor=white" alt="Kafka UI">
+    <img src="https://img.shields.io/badge/Datadog-632CA6?logo=datadog&logoColor=white" alt="Datadog">
+  </p>
 </div>
 
 ---
@@ -20,7 +25,7 @@
 
 <p align="center">
   <a href="#-quick-start">Quick Start</a> · 
-  <a href="#-tools">Tools</a> · 
+  <a href="#-available-tools">Tools</a> · 
   <a href="#-getting-credentials">Credentials</a> · 
   <a href="#%EF%B8%8F-configuration">Configuration</a> · 
   <a href="#-example-prompts">Examples</a> · 
@@ -33,21 +38,24 @@
 ## How it works
 
 ```
-Claude Code  ──►  byok-observability-mcp (local npx process)
-                          │
-                          │  env vars — never leave your machine
-                          ▼
-          ┌────────────────────────────────┐
-          │  📊 Grafana    🔥 Prometheus   │
-          │  📨 Kafka UI   🐕 Datadog      │
-          └────────────────────────────────┘
+Claude Code / Codex CLI
+        │
+        ▼
+byok-observability-mcp  (local npx process)
+        │
+        │  env vars — never leave your machine
+        ▼
+┌────────────────────────────────┐
+│  Grafana  ·  Prometheus        │
+│  Kafka UI ·  Datadog (proxy)   │
+└────────────────────────────────┘
 ```
 
 ---
 
 ## ⚡ Quick Start
 
-### 1 → Create `.mcp.json` in your project root
+### Step 1 — Create `.mcp.json` in your project root
 
 Include **only** the backends you need. Delete the rest.
 
@@ -72,7 +80,7 @@ Include **only** the backends you need. Delete the rest.
 
 > **Credentials in git?** Use the `${VAR}` approach instead — see [Configuration → Method B](#method-b--keep-credentials-out-of-git).
 
-### 2 → Start Claude Code
+### Step 2 — Start Claude Code
 
 ```bash
 claude
@@ -80,7 +88,7 @@ claude
 
 Claude Code reads `.mcp.json` automatically. No `claude mcp add`, no build step.
 
-### 3 → Verify
+### Step 3 — Verify
 
 Ask Claude:
 
@@ -93,64 +101,36 @@ What observability tools do you have available?
 
 ---
 
-## Using with OpenAI Codex CLI
+## 🧩 Supported clients
 
-Works the same way — the MCP server uses stdio transport, which Codex CLI supports natively. No code changes needed.
+| Client | Configuration |
+|--------|--------------|
+| **Claude Code** | `.mcp.json` in project root (recommended) or `claude mcp add` CLI |
+| **OpenAI Codex CLI** | `.mcp.json` in project root — same format as Claude Code |
 
-### 1 → Create `codex.yaml` in your project root
+Both clients read `.mcp.json` automatically. The Quick Start above works for either.
 
-```bash
-curl -sO https://raw.githubusercontent.com/alimuratkuslu/byok-observability-mcp/main/codex.yaml.example
-cp codex.yaml.example codex.yaml
-# Edit codex.yaml with your actual URLs and tokens
-```
-
-Add `codex.yaml` to your `.gitignore` to keep credentials out of version control.
-
-```yaml
-# codex.yaml
-mcpServers:
-  observability-mcp:
-    command: npx
-    args:
-      - "-y"
-      - "byok-observability-mcp"
-    env:
-      GRAFANA_URL: "https://grafana.mycompany.internal"
-      GRAFANA_TOKEN: "glsa_..."
-      # add only the backends you use
-```
-
-### 2 → Start Codex
+<details>
+<summary><strong>Codex CLI example</strong></summary>
 
 ```bash
+# Same .mcp.json as above works out of the box
 codex
 ```
 
-Codex reads `codex.yaml` automatically.
-
-### 3 → Verify
-
-```
-What observability tools do you have available?
-```
-
-### Keep credentials out of git
-
-Use `.env` + the included helper script:
-
+Or add via CLI:
 ```bash
-cp .env.example .env
-# Edit .env with your values
-./scripts/run-codex-with-env.sh
+codex mcp add --transport stdio observability-mcp -- npx -y byok-observability-mcp
 ```
+
+</details>
 
 ---
 
-## 🛠 Tools
+## 🔧 Available tools
 
 <details open>
-<summary><strong>📊 Grafana</strong> — 5 tools</summary>
+<summary><img src="https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white" alt="Grafana" height="18"> &nbsp;<strong>5 tools</strong></summary>
 
 > Enabled when `GRAFANA_URL` + `GRAFANA_TOKEN` are set.
 
@@ -165,7 +145,7 @@ cp .env.example .env
 </details>
 
 <details>
-<summary><strong>🔥 Prometheus</strong> — 5 tools</summary>
+<summary><img src="https://img.shields.io/badge/Prometheus-E6522C?logo=prometheus&logoColor=white" alt="Prometheus" height="18"> &nbsp;<strong>5 tools</strong></summary>
 
 > Enabled when `PROMETHEUS_URL` is set.
 
@@ -180,7 +160,7 @@ cp .env.example .env
 </details>
 
 <details>
-<summary><strong>📨 Kafka UI</strong> — 6 tools</summary>
+<summary><img src="https://img.shields.io/badge/Kafka_UI-231F20?logo=apachekafka&logoColor=white" alt="Kafka UI" height="18"> &nbsp;<strong>6 tools</strong></summary>
 
 > Enabled when `KAFKA_UI_URL` is set.
 
@@ -196,7 +176,7 @@ cp .env.example .env
 </details>
 
 <details>
-<summary><strong>🐕 Datadog</strong> — proxied via official server</summary>
+<summary><img src="https://img.shields.io/badge/Datadog-632CA6?logo=datadog&logoColor=white" alt="Datadog" height="18"> &nbsp;<strong>proxied via official server</strong></summary>
 
 > Enabled when both `DD_API_KEY` and `DD_APP_KEY` are set. Proxies the [official Datadog MCP server](https://docs.datadoghq.com/developers/mcp/).
 
@@ -226,7 +206,7 @@ Default toolsets: `core`, `apm`, `alerting`. Set `DD_TOOLSETS=all` to load every
 ## 🔑 Getting credentials
 
 <details>
-<summary><strong>📊 Grafana — service account token</strong></summary>
+<summary><img src="https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white" alt="Grafana" height="18"> &nbsp;<strong>Service account token</strong></summary>
 
 1. Open Grafana → **Administration** → **Users and access** → **Service accounts**
 2. Click **Add service account** → set Role to `Viewer` → **Create**
@@ -246,7 +226,7 @@ GRAFANA_VERIFY_SSL=false
 </details>
 
 <details>
-<summary><strong>🔥 Prometheus — URL (+ optional basic auth)</strong></summary>
+<summary><img src="https://img.shields.io/badge/Prometheus-E6522C?logo=prometheus&logoColor=white" alt="Prometheus" height="18"> &nbsp;<strong>URL (+ optional basic auth)</strong></summary>
 
 If Prometheus has no authentication:
 ```
@@ -263,7 +243,7 @@ PROMETHEUS_PASSWORD=your-password
 </details>
 
 <details>
-<summary><strong>📨 Kafka UI — URL (+ optional login)</strong></summary>
+<summary><img src="https://img.shields.io/badge/Kafka_UI-231F20?logo=apachekafka&logoColor=white" alt="Kafka UI" height="18"> &nbsp;<strong>URL (+ optional login)</strong></summary>
 
 If Kafka UI has no authentication:
 ```
@@ -280,7 +260,7 @@ KAFKA_UI_PASSWORD=your-password
 </details>
 
 <details>
-<summary><strong>🐕 Datadog — API key + Application key</strong></summary>
+<summary><img src="https://img.shields.io/badge/Datadog-632CA6?logo=datadog&logoColor=white" alt="Datadog" height="18"> &nbsp;<strong>API key + Application key</strong></summary>
 
 **API key:** Datadog → **Organization Settings** → **API Keys** → New Key
 
@@ -392,19 +372,19 @@ Add to `~/.claude.json`:
 
 | Variable | Backend | Required | Description |
 |----------|---------|:--------:|-------------|
-| `GRAFANA_URL` | 📊 Grafana | ✅ | Base URL of your Grafana instance |
-| `GRAFANA_TOKEN` | 📊 Grafana | ✅ | Service account token (Viewer role) |
-| `GRAFANA_VERIFY_SSL` | 📊 Grafana | | Set to `false` to skip TLS verification |
-| `PROMETHEUS_URL` | 🔥 Prometheus | ✅ | Base URL of your Prometheus instance |
-| `PROMETHEUS_USERNAME` | 🔥 Prometheus | | Basic auth username |
-| `PROMETHEUS_PASSWORD` | 🔥 Prometheus | | Basic auth password |
-| `KAFKA_UI_URL` | 📨 Kafka UI | ✅ | Base URL of your Kafka UI instance |
-| `KAFKA_UI_USERNAME` | 📨 Kafka UI | | Login username |
-| `KAFKA_UI_PASSWORD` | 📨 Kafka UI | | Login password |
-| `DD_API_KEY` | 🐕 Datadog | ✅ | Datadog API key |
-| `DD_APP_KEY` | 🐕 Datadog | ✅ | Datadog Application key |
-| `DD_SITE` | 🐕 Datadog | | Datadog site (default: `datadoghq.com`) |
-| `DD_TOOLSETS` | 🐕 Datadog | | Tool groups to load (default: `core,apm,alerting`) |
+| `GRAFANA_URL` | Grafana | ✅ | Base URL of your Grafana instance |
+| `GRAFANA_TOKEN` | Grafana | ✅ | Service account token (Viewer role) |
+| `GRAFANA_VERIFY_SSL` | Grafana | | Set to `false` to skip TLS verification |
+| `PROMETHEUS_URL` | Prometheus | ✅ | Base URL of your Prometheus instance |
+| `PROMETHEUS_USERNAME` | Prometheus | | Basic auth username |
+| `PROMETHEUS_PASSWORD` | Prometheus | | Basic auth password |
+| `KAFKA_UI_URL` | Kafka UI | ✅ | Base URL of your Kafka UI instance |
+| `KAFKA_UI_USERNAME` | Kafka UI | | Login username |
+| `KAFKA_UI_PASSWORD` | Kafka UI | | Login password |
+| `DD_API_KEY` | Datadog | ✅ | Datadog API key |
+| `DD_APP_KEY` | Datadog | ✅ | Datadog Application key |
+| `DD_SITE` | Datadog | | Datadog site (default: `datadoghq.com`) |
+| `DD_TOOLSETS` | Datadog | | Tool groups to load (default: `core,apm,alerting`) |
 
 ---
 
@@ -414,18 +394,18 @@ Add to `~/.claude.json`:
 
 | Backend | Try asking Claude... |
 |---------|---------------------|
-| 📊 Grafana | *"List all datasources and tell me which ones are Prometheus type."* |
-| 📊 Grafana | *"Search for dashboards related to 'kubernetes' — list names and UIDs."* |
-| 📊 Grafana | *"Query `http_requests_total` rate over the last hour via the default Prometheus datasource."* |
-| 🔥 Prometheus | *"What is the current value of the `up` metric? Which targets are down?"* |
-| 🔥 Prometheus | *"Show CPU usage (`node_cpu_seconds_total` rate) over the past hour, by instance."* |
-| 🔥 Prometheus | *"List all available metrics that start with `http_`."* |
-| 📨 Kafka UI | *"List all Kafka clusters. Are there any with offline brokers?"* |
-| 📨 Kafka UI | *"Describe the topic 'orders' in cluster 'production' — partitions and replication factor?"* |
-| 📨 Kafka UI | *"Check consumer lag for group 'order-processor'. Which partitions have the highest lag?"* |
-| 🐕 Datadog | *"List all Datadog monitors currently in Alert state."* |
-| 🐕 Datadog | *"Show APM service performance for the past hour. Which services have the highest error rate?"* |
-| 🐕 Datadog | *"Query `aws.ec2.cpuutilization` for the last 30 minutes. Which hosts are above 80%?"* |
+| Grafana | *"List all datasources and tell me which ones are Prometheus type."* |
+| Grafana | *"Search for dashboards related to 'kubernetes' — list names and UIDs."* |
+| Grafana | *"Query `http_requests_total` rate over the last hour via the default Prometheus datasource."* |
+| Prometheus | *"What is the current value of the `up` metric? Which targets are down?"* |
+| Prometheus | *"Show CPU usage (`node_cpu_seconds_total` rate) over the past hour, by instance."* |
+| Prometheus | *"List all available metrics that start with `http_`."* |
+| Kafka UI | *"List all Kafka clusters. Are there any with offline brokers?"* |
+| Kafka UI | *"Describe the topic 'orders' in cluster 'production' — partitions and replication factor?"* |
+| Kafka UI | *"Check consumer lag for group 'order-processor'. Which partitions have the highest lag?"* |
+| Datadog | *"List all Datadog monitors currently in Alert state."* |
+| Datadog | *"Show APM service performance for the past hour. Which services have the highest error rate?"* |
+| Datadog | *"Query `aws.ec2.cpuutilization` for the last 30 minutes. Which hosts are above 80%?"* |
 
 ### Cross-backend queries
 
@@ -455,14 +435,14 @@ then look for related Datadog monitors that might be alerting.
 
 | Backend | Recommended role |
 |---------|-----------------| 
-| 📊 Grafana | Service account with **Viewer** role |
-| 🔥 Prometheus | Network-level read-only access |
-| 📨 Kafka UI | Read-only UI user |
-| 🐕 Datadog | API key + Application key with read scopes |
+| Grafana | Service account with **Viewer** role |
+| Prometheus | Network-level read-only access |
+| Kafka UI | Read-only UI user |
+| Datadog | API key + Application key with read scopes |
 
 ---
 
-## 🧪 Development
+## 🛠 Development
 
 ```bash
 git clone https://github.com/alimuratkuslu/byok-observability-mcp
@@ -483,9 +463,9 @@ docker compose up -d
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| 📊 Grafana | [localhost:3000](http://localhost:3000) | admin / admin |
-| 🔥 Prometheus | [localhost:9090](http://localhost:9090) | — |
-| 📨 Kafka UI | [localhost:8080](http://localhost:8080) | — |
+| Grafana | [localhost:3000](http://localhost:3000) | admin / admin |
+| Prometheus | [localhost:9090](http://localhost:9090) | — |
+| Kafka UI | [localhost:8080](http://localhost:8080) | — |
 
 <details>
 <summary><strong>Full sandbox setup steps</strong></summary>
