@@ -1,6 +1,6 @@
 {
   "name": "byok-observability-mcp",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "MCP server for Grafana, Prometheus, Kafka UI, and Datadog — bring your own credentials (BYOK)",
   "license": "MIT",
   "type": "module",
@@ -53,6 +53,5 @@
     "datadog",
     "claude",
     "byok"
-  ],
-  "license": "MIT"
+  ]
 }
