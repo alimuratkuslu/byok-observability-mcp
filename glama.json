@@ -1,0 +1,9 @@
+{
+  "$schema": "https://glama.ai/mcp/schemas/server.json",
+  "name": "byok-observability-mcp",
+  "description": "Comprehensive MCP server for Grafana, Prometheus, Kafka UI, and Datadog with a secure Bring Your Own Key (BYOK) model.",
+  "repository": "https://github.com/alimuratkuslu/byok-observability-mcp",
+  "maintainers": [
+    "alimuratkuslu"
+  ]
+}
