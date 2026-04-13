@@ -7,6 +7,7 @@
 
   [![npm version](https://img.shields.io/npm/v/byok-observability-mcp)](https://www.npmjs.com/package/byok-observability-mcp)
   [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+  [![Awesome MCP Servers](https://img.shields.io/badge/Awesome-MCP_Servers-brightgreen)](https://github.com/punkpeye/awesome-mcp-servers)
   [![Node ≥18](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
   [![alimuratkuslu/byok-observability-mcp MCP server](https://glama.ai/mcp/servers/alimuratkuslu/byok-observability-mcp/badges/score.svg?v=0.5.1)](https://glama.ai/mcp/servers/alimuratkuslu/byok-observability-mcp)
 
