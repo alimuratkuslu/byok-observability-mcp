@@ -3,7 +3,7 @@
 
   <h1>byok-observability-mcp</h1>
 
-  <p><strong>Query your observability stack from Claude Code, Codex, or any MCP client — no data leaves your machine.</strong></p>
+  <p><strong>Query your observability stack from Claude Code, Codex, or any MCP client and no data leaves your machine.</strong></p>
 
   [![npm version](https://img.shields.io/npm/v/byok-observability-mcp)](https://www.npmjs.com/package/byok-observability-mcp)
   [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
